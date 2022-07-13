@@ -1,6 +1,8 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
+# 1,2,7,10
 class IonosphereChemistry:
     def __init__(self):
             self.spec2idx = {'e' : 0,
@@ -16,14 +18,14 @@ class IonosphereChemistry:
                              'NO+' : 10,
                              'He' : 11,
                              'He+' : 12}
-            
+            self.idx2spec = {self.spec2idx[key] : key for key in self.spec2idx.keys()}
             stoich_mat = np.zeros((13, 17))
             #electrons
             stoich_mat[0,[6,11,12]] = -1
             #O
             stoich_mat[1,[0,1,2,5,12,14]] = 1
             stoich_mat[1,6] = 2
-            stoich_mat[1,7] = -1
+            stoich_mat[1,[7,8]] = -1
             #O+
             stoich_mat[2,8] = 1
             stoich_mat[2,[0,1,2]] = -1
@@ -59,7 +61,7 @@ class IonosphereChemistry:
 
     def k1(self,T):
         if T >= 300 and T <= 1700:
-            k1 = 1.533e-12 - 5.92e-13*(T/300.0) + 8.6e14*(T/300.0)**2
+            k1 = 1.533e-12 - 5.92e-13*(T/300.0) + 8.6e-14*(T/300.0)**2
         else: 
             k1 = 2.73e-12 - 1.155e-12*(T/300.0) + 1.483e-13*(T/300.0)**2 
         return k1
@@ -121,19 +123,50 @@ def reactor_model(t,c,chem_model,D,c_in,T):
     return D*(c_in - c) + chem_model.S @ chem_model.rates(c,T)
 
 chem_model = IonosphereChemistry()
+
+D = 0.0 # [-]
+T = 2000 # [K] 
+scale = 1e8
+ions = [0, 2, 4, 6, 8, 10, 12]
 c0 = np.zeros(13)
-c_in = np.zeros(13)
-c_in[[0, 2, 4, 6, 8, 10, 12]] = 1e-9*np.ones(7)
-D = 0.1
-T = 1500
+c0[chem_model.spec2idx['O2']] = 0.21*scale #0.21*p/(8.314*T)
+c0[chem_model.spec2idx['N2']] = 0.79*scale #0.79*p/(8.314*T)
+c0[ions[1:]] = scale*np.ones(6)
+c0[0] = sum(c0[ions]) 
 
 def my_reactor_model(t,c):
-    return D*(c_in - c) + chem_model.S @ chem_model.rates(c,T)
+    return chem_model.S @ chem_model.rates(c,T)
 
-sol = solve_ivp(my_reactor_model, (0.0,1.0), c0)
+tspan_short = (0.0, 2.0)
+tspan_long = (0.0, 50.0)
 
-import matplotlib.pyplot as plt
+sol = solve_ivp(my_reactor_model, tspan_long, c0)
 fig, ax = plt.subplots()
-for i in range(13):
-    ax.plot(sol.t, sol.y[i])
+for i in ions:
+    ax.plot(sol.t, sol.y[i], label = chem_model.idx2spec[i])
+ax.legend(loc = 'upper right')
 fig.show()
+fig.savefig("ion_concentrations_long.pdf")
+
+fig, ax = plt.subplots()
+for i in set(range(13)) - set(ions):
+    ax.plot(sol.t, sol.y[i], label = chem_model.idx2spec[i])
+ax.legend(loc = 'upper right')
+fig.show()
+fig.savefig("species_concentrations_long.pdf")
+
+
+sol = solve_ivp(my_reactor_model, tspan_short, c0)
+fig, ax = plt.subplots()
+for i in ions:
+    ax.plot(sol.t, sol.y[i], label = chem_model.idx2spec[i])
+ax.legend(loc = 'upper right')
+fig.show()
+fig.savefig("ion_concentrations_short.pdf")
+
+fig, ax = plt.subplots()
+for i in set(range(13)) - set(ions):
+    ax.plot(sol.t, sol.y[i], label = chem_model.idx2spec[i])
+ax.legend(loc = 'upper right')
+fig.show()
+fig.savefig("species_concentrations_short.pdf")

@@ -3,19 +3,19 @@ import time # use time.time() to track integration time
 
 def explicit_euler_step(x0,t,f,dt):
     # implment explicit euler time stepping
-    return nothing 
-    
+    return None 
+
 def implicit_euler_step(x0,t,f,dt):
     # implement implicit euler time stepping
-    return nothing 
+    return None
     
 def crank_nicolson_step(x0,t,f,dt):
     # implement crank-nicolson time stepping
-    return nothing 
+    return None 
     
 def heun_step(x0,t,f,dt):
     # implement heun time stepping
-    return nothing 
+    return None
     
 def integrate(f, x0, tspan, dt, int):
     t, tf = tspan

@@ -122,6 +122,26 @@ axs = [Axis(fig[1,i],
 correct_RoS!(axs[1])
 explicit_Euler_RoS!(axs[2])
 implicit_Euler_RoS!(axs[3])
-save(string(@__DIR__,"/ros.pdf"), fig)
-save(string(@__DIR__,"/ros.png"), fig)
+save(string(@__DIR__,"/assets/ros.pdf"), fig)
+save(string(@__DIR__,"/assets/ros.png"), fig)
 fig
+
+
+# flow field
+x = y = -2:0.005:2
+f(z) = 1 / (z * (z^2 - z - 1 - 3im))
+fvals = [f(u + 1im * v) for u in x, v in y]
+fvalues = abs.(fvals)
+fargs = angle.(fvals)
+polya(x, y) = Point2f(real(f(x + 1im * y)), -imag(f(x + 1im * y)))
+
+fig = Figure(resolution = (900, 400))
+ax = Axis(fig[1, 1], aspect = 1)
+streamplot!(ax, polya, -2 .. 2, -2 .. 2, colormap = [:black, :black],
+        gridsize = (40, 40), arrow_size = 6, linewidth = 1)
+limits!(ax, -2, 2, -2, 2)
+
+colsize!(fig.layout, 1, Aspect(1, 1.0))
+display(fig)
+save(string(@__DIR__,"/assets/polya.png"), fig)
+save(string(@__DIR__,"/assets/polya.pdf"), fig)

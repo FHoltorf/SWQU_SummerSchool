@@ -1,25 +1,3 @@
-
-
-# do things for a small reactor model -> every node is like a little reactor
-# 
-### give them the basic run-down for chemical reactions
-### dn/dt = S*r -> S is the stochiometry matrix
-### 
-
-# implement explicit Euler -> instable
-# implement implicit Euler -> stable but overdamped (mention BDF methods)
-# implement Crank-Nicolson method = 2 - stage implicit Runge-Kutta method -> stable and accurate but expensive
-# implement Heun's method = 2 - stage explicit Runge-Kutta method -> (somewhat stable), accurate and cheap
-# many explicit/semi-implicit suggest that they can check what is a good trade-off 
-
-# mention stiffness ->  fast and small time-scales 
-# ==> need a lot of small time steps of explicit integrator to keep up with the dynamics and but long simulation horizons
-#     to see effects in slow dynamics
-
-# A -> B <-> 2D
-# k= [100, 0.25, 1.0]
-# test different integrators to give yourself an idea of what the trade-offs are. 
-
 from scipy.optimize import fsolve
 import numpy as np
 import matplotlib.pyplot as plt
@@ -86,11 +64,11 @@ for dt in dt_range:
 def plot_traces(ax, t_range, sol):
     colors = ["red", "dodgerblue", "black"]
     labels = ["A", "B", "C"]
-    for i in range(0,2):
+    for i in range(3):
         ax.plot(t_range, [s[i] for s in sol], color = colors[i], linewidth = 2, label = labels[i])
     ax.set_xlabel("t")
     ax.set_ylabel("C(t)")
-    ax.label_outer()
+    plt.tight_layout()
         
 integrator2name = {crank_nicolson_step : "Crank-Nicolson",
                    explicit_euler_step : "Explicit Euler",
@@ -108,6 +86,7 @@ for integrator in integrators:
             axs[i,j].set_title("dt = "+str(dt))
             plot_traces(axs[i,j], ts, sol)   
     fig.show()
+    fig.savefig(integrator2name[integrator]+"_traces.pdf")
 
 def compute_error(sol, ref_sol):
     return sum(np.linalg.norm(sol[i]-ref_sol[i]) for i in range(len(ref_sol)))/len(sol)
@@ -123,11 +102,15 @@ colors  = {integrators[0] : "red",
            integrators[2] : "green",
            integrators[3] : "black"}
 
-
+axs[1].set_xlabel('h')
+axs[0].set_ylabel('error')
+axs[1].set_ylabel('CPU time [s]')
 for integrator in integrators:
     times = [performance[dt, integrator, "CPU_time"] for dt in dt_range]
     accuracy = [np.linalg.norm(performance[dt, integrator, "sol"][0][round(0.01/dt)][0] - benchmark) for dt in dt_range]
     axs[0].plot(dt_range, accuracy, 'o-', color = colors[integrator], linewidth = 2, label = integrator2name[integrator])
     axs[1].plot(dt_range, times, 'o-', color = colors[integrator], linewidth = 2)#, label = integrator2name[integrator])
-fig.legend(loc = 'upper left')
+axs[0].legend(loc = 'lower right')
+plt.tight_layout()
+fig.savefig("integrator_performance.pdf")
 fig.show()
