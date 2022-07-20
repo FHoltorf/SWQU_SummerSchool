@@ -79,18 +79,6 @@ class IonosphereChemistry:
         return k1
 
     def rate_constants(self,T):
-        # reaction network
-        # chemical reactions
-        # (1) O+ + N2 -> NO+ + O 
-        # (2) O2+ + e -> 2O
-        # (3) N2+ + O -> O+ + N2
-        # (4) N2+ + O2 -> O2+ + N2
-        # (5) O2+ + N -> NO+ + O
-        # (6) NO+ + e -> N + O
-        # photo-ionization
-        # (7/8) O <-> O+ + e
-        # (9/10) O2 <-> O2+ + e
-        # (11/12) N2 <-> N2+ + e
         ks = np.array([
                 self.k1(T),
                 2.82e-11,
@@ -133,7 +121,7 @@ c0 = {100 : c0_100, 300 : c0_300}
 Te = {100 : Te_100, 300 : Te_300}
 
 alts = [100, 300]
-tspan = {100 : (0, 10000.0), 300 : (0, 40000.0)}
+tspan = {100 : (0, 10000.0), 300 : (0, 100.0)}
 t_eval = {alt : None for alt in alts} 
 sol = {alt : solve_ivp(lambda t, c : reactor_model(t,c,chem_model,Te[alt]), tspan[alt], c0[alt], t_eval = t_eval[alt], method = 'LSODA') for alt in alts}
 

@@ -145,3 +145,50 @@ colsize!(fig.layout, 1, Aspect(1, 1.0))
 display(fig)
 save(string(@__DIR__,"/assets/polya.png"), fig)
 save(string(@__DIR__,"/assets/polya.pdf"), fig)
+
+
+## RK Figure
+# test function dx/dt = x(t)
+x0 = 0.1
+t0 = 0.0
+h = 1.0
+f(t,x) = x
+
+a = [[0], [1/2], [0, 1/2], [0,0,1]]
+c = [0, 1/2, 1/2, 1]
+b = [1/6, 1/3, 1/3, 1/6]
+ks = [f(t0, x0)]
+ys = [x0]
+n = length(a)
+for i in 2:n 
+    push!(ys, x0 + h*sum(a[i] .* ks))
+    push!(ks, f(t0+c[i]*h, ys[end]))
+end
+
+fig = Figure(fontsize=24, resolution = (1000,800))
+ax = Axis(fig[1,1], xgridvisible=false, ygridvisible=false, xlabel = L"t", ylabel = L"x")
+ax_up = Axis(fig[1,2], xgridvisible=false, ygridvisible=false, xlabel = L"t", ylabel = L"f(t,x(t))")
+ax_int = Axis(fig[2,1:2], xgridvisible=false, ygridvisible=false, xlabel = L"t", ylabel = L"\int_0^t f(s,x(s)) \, ds")
+plot_range = t0:1.25*h/100:t0+1.25*h
+band_range = t0:h/100:t0+h
+# true solution
+lines!(ax, plot_range, x0*exp.(plot_range), color = :red, linewidth = 2, label = L"x(t)")
+lines!(ax_up, plot_range, x0*exp.(plot_range), color = :red, linewidth=2, label = L"f(t,x(t))")
+band!(ax_up, band_range, zeros(length(band_range)), x0*exp.(band_range), color = (:red,0.5))
+lines!(ax_int, band_range, map(s -> x0*(exp(s)-exp(t0)), band_range), color = :red, linewidth = 2)
+# updates
+boundary = 0
+int = 0
+for (i,k) in enumerate(ks)
+    lines!(ax, [t0,t0+c[i]*h], [x0,ys[i]], linewidth = 1.0, color = (:dodgerblue, 0.9), linestyle=:dot)
+    arrows!(ax, [t0+c[i]*h], [ys[i]], [h/3], [h/3*ks[i]], arrowcolor = :blue, linecolor= :blue)
+    scatter!(ax,[t0+c[i]*h], [ys[i]], color = :blue)
+    scatter!(ax_up, Point2f(t0+c[i]*h, ks[i]), color = :blue)
+    band!(ax_up, [t0+h*boundary, t0+h*(boundary+b[i])], [0,0], [ks[i], ks[i]], color = (:dodgerblue,0.5))
+    lines!(ax_int, [t0+h*boundary, t0+h*(boundary+b[i])], [int, int + b[i]*ks[i]], color = :dodgerblue)
+    int += b[i]*ks[i]
+    boundary += b[i]
+end
+
+save(string(@__DIR__,"/assets/runge_kutta.png"), fig)
+save(string(@__DIR__,"/assets/runge_kutta.pdf"), fig)
